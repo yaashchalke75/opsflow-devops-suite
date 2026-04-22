@@ -13,7 +13,13 @@ export function createApp() {
 
   app.set('trust proxy', 1);
   app.use(helmet({ crossOriginResourcePolicy: false }));
-  app.use(cors({ origin: env.corsOrigin, credentials: false }));
+
+  // CORS: if CORS_ORIGIN contains '*', allow any origin. Otherwise, only listed origins.
+  const allowAny = env.corsOrigin.includes('*');
+  app.use(cors({
+    origin: allowAny ? true : env.corsOrigin,
+    credentials: false,
+  }));
   app.use(compression());
   app.use(express.json({ limit: '1mb' }));
   app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
