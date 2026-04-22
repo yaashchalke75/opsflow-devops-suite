@@ -115,10 +115,11 @@ export function Sidebar() {
 export function MobileSidebar() {
   const { mobileNavOpen, setMobileNav } = useUI();
   const location = useLocation();
+  const close = () => setMobileNav(false);
 
   // Auto-close on route change
   useEffect(() => {
-    if (mobileNavOpen) setMobileNav(false);
+    close();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
@@ -129,37 +130,52 @@ export function MobileSidebar() {
     return () => { document.body.style.overflow = ''; };
   }, [mobileNavOpen]);
 
+  // Close on Escape
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mobileNavOpen]);
+
   return (
     <AnimatePresence>
       {mobileNavOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="md:hidden fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm"
-          onClick={() => setMobileNav(false)}
-        >
+        <div className="md:hidden fixed inset-0 z-[80]">
+          {/* Backdrop — separate element, guaranteed clickable */}
+          <motion.button
+            type="button"
+            aria-label="Close navigation"
+            onClick={close}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 w-full h-full bg-black/60 backdrop-blur-sm cursor-pointer"
+          />
+          {/* Drawer panel */}
           <motion.aside
-            initial={{ x: -280 }}
+            initial={{ x: -300 }}
             animate={{ x: 0 }}
-            exit={{ x: -280 }}
+            exit={{ x: -300 }}
             transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-            onClick={(e) => e.stopPropagation()}
-            className="h-full w-[280px] bg-bg-soft border-r border-border flex flex-col"
+            className="absolute left-0 top-0 bottom-0 h-full w-[280px] max-w-[85vw] bg-bg-soft border-r border-border flex flex-col"
           >
-            <div className="flex items-center justify-between h-14 px-4 border-b border-border">
+            <div className="flex items-center justify-between h-14 px-4 border-b border-border shrink-0">
               <Logo />
               <button
-                onClick={() => setMobileNav(false)}
-                className="h-8 w-8 grid place-items-center rounded-md text-fg-muted hover:text-fg hover:bg-bg-hover"
+                type="button"
+                onClick={close}
+                onTouchEnd={(e) => { e.preventDefault(); close(); }}
+                className="h-9 w-9 grid place-items-center rounded-md text-fg-muted hover:text-fg hover:bg-bg-hover active:bg-bg-hover -mr-2"
                 aria-label="Close navigation"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <NavList collapsed={false} onItemClick={() => setMobileNav(false)} />
+            <NavList collapsed={false} onItemClick={close} />
           </motion.aside>
-        </motion.div>
+        </div>
       )}
     </AnimatePresence>
   );

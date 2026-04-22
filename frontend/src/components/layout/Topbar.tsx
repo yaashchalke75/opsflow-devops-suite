@@ -96,7 +96,7 @@ export function Topbar() {
             )}
           </button>
           {notifOpen && (
-            <div className="absolute right-0 top-11 w-[360px] bg-bg-card border border-border rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] p-0 z-[60] animate-fade-in backdrop-blur-sm">
+            <div className="fixed sm:absolute right-2 sm:right-0 top-[56px] sm:top-11 w-[calc(100vw-1rem)] sm:w-[360px] max-w-[360px] bg-bg-card border border-border rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] p-0 z-[60] animate-fade-in backdrop-blur-sm">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                 <div className="text-sm font-semibold">
                   Notifications
@@ -163,7 +163,7 @@ export function Topbar() {
             </div>
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-11 w-56 bg-bg-card border border-border rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] p-1 z-[60] animate-fade-in backdrop-blur-sm">
+            <div className="fixed sm:absolute right-2 sm:right-0 top-[56px] sm:top-11 w-56 bg-bg-card border border-border rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] p-1 z-[60] animate-fade-in backdrop-blur-sm">
               <div className="px-3 py-2 border-b border-border">
                 <div className="text-xs font-medium truncate">{user?.email}</div>
                 <div className="text-[10px] text-fg-subtle">{user?.role && ROLE_LABEL[user.role]}</div>

@@ -6,13 +6,14 @@ import { Modal } from '@/components/ui/Modal';
 import { authApi } from '@/api';
 import { useAuth } from '@/store/auth';
 import toast from 'react-hot-toast';
-import { Github, ArrowRight, Lock, Info, Mail, UserPlus, Sparkles, ChevronDown } from 'lucide-react';
+import { Github, ArrowRight, Lock, Info, Mail, UserPlus, Sparkles, ChevronDown, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
   const nav = useNavigate();
   const setSession = useAuth((s) => s.setSession);
-  const [email, setEmail] = useState('elena.marquez@opsflow.io');
-  const [password, setPassword] = useState('demo1234');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [ssoProvider, setSsoProvider] = useState<'GitHub' | 'Google' | null>(null);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
@@ -112,14 +113,27 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@company.com"
         />
-        <Input
-          label="Password"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
-        />
+        <div className="relative">
+          <Input
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            className="absolute right-2.5 top-[30px] h-6 w-6 grid place-items-center rounded text-fg-subtle hover:text-fg transition-colors"
+            tabIndex={-1}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 text-xs text-fg-muted cursor-pointer select-none">
             <input type="checkbox" className="accent-brand-500" defaultChecked /> Remember me
