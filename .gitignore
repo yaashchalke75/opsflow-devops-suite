@@ -1,0 +1,76 @@
+# ─────────────────────────────────────────────
+# Dependencies & build artifacts
+# ─────────────────────────────────────────────
+node_modules/
+**/node_modules/
+dist/
+build/
+.vite/
+out/
+coverage/
+*.tsbuildinfo
+
+# ─────────────────────────────────────────────
+# Environment variables & secrets
+# NEVER commit these — they contain DB passwords,
+# JWT secrets, API keys. The .env.example files
+# ARE committed as safe templates.
+# ─────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Common secret file patterns
+*.pem
+*.key
+*.p12
+*.pfx
+*.cert
+*.crt
+credentials.json
+secrets.json
+service-account*.json
+firebase-adminsdk-*.json
+
+# ─────────────────────────────────────────────
+# Editor / IDE / OS junk
+# ─────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# ─────────────────────────────────────────────
+# AI assistant local state
+# Claude Code, Cursor, Copilot caches — local to each dev,
+# not useful in the shared repo.
+# ─────────────────────────────────────────────
+.claude/
+.cursor/
+.aider*
+.copilot/
+
+# ─────────────────────────────────────────────
+# Logs & debug
+# ─────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─────────────────────────────────────────────
+# Runtime caches / temp
+# ─────────────────────────────────────────────
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.turbo/
+tmp/
+temp/
