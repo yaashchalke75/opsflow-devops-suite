@@ -20,7 +20,7 @@ export function THead({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function TH({ children, className }: { children: React.ReactNode; className?: string }) {
+export function TH({ children, className }: { children?: React.ReactNode; className?: string }) {
   return <th className={cn('px-4 py-2.5 font-semibold', className)}>{children}</th>;
 }
 
@@ -45,6 +45,6 @@ export function TR({ children, onClick, className }: {
   );
 }
 
-export function TD({ children, className }: { children: React.ReactNode; className?: string }) {
+export function TD({ children, className }: { children?: React.ReactNode; className?: string }) {
   return <td className={cn('px-4 py-3 align-middle', className)}>{children}</td>;
 }
