@@ -59,7 +59,7 @@ export function Topbar() {
   const onLogout = () => { clear(); navigate('/login'); };
 
   return (
-    <header className="relative z-50 h-14 border-b border-border bg-bg-soft/60 backdrop-blur-sm flex items-center justify-between gap-2 px-3 md:px-6 shrink-0">
+    <header className="sticky md:relative top-0 z-50 h-14 border-b border-border bg-bg-soft/95 md:bg-bg-soft/60 backdrop-blur-sm flex items-center justify-between gap-2 px-3 md:px-6 shrink-0">
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <button
           onClick={() => setMobileNav(true)}

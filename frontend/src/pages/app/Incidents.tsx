@@ -210,21 +210,26 @@ export default function Incidents() {
               onClick={(e) => e.stopPropagation()}
               className="absolute right-0 top-0 bottom-0 w-full md:w-[560px] bg-bg-card border-l border-border flex flex-col"
             >
-              <div className="flex items-start justify-between px-5 py-4 border-b border-border">
-                <div>
-                  <div className="flex items-center gap-2 text-xs text-fg-muted mb-1">
+              <div className="flex items-start justify-between px-4 md:px-5 py-3.5 md:py-4 border-b border-border shrink-0">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 text-xs text-fg-muted mb-1 flex-wrap">
                     <span className="font-mono">{selected.key}</span>
                     <span>·</span>
                     <span>{formatDate(selected.createdAt)}</span>
                   </div>
-                  <h2 className="text-base font-semibold pr-6">{selected.title}</h2>
+                  <h2 className="text-base font-semibold pr-2 break-words">{selected.title}</h2>
                 </div>
-                <button onClick={() => setSelected(null)} className="text-fg-subtle hover:text-fg p-1 rounded-md hover:bg-bg-hover">
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  className="h-9 w-9 grid place-items-center text-fg-subtle hover:text-fg active:bg-bg-hover rounded-md shrink-0 -mr-1"
+                  aria-label="Close"
+                >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
-              <div className="p-5 border-b border-border grid grid-cols-2 gap-4 text-sm">
+              <div className="p-4 md:p-5 border-b border-border grid grid-cols-2 gap-3 md:gap-4 text-sm">
                 <div>
                   <div className="label">Priority</div>
                   <Select

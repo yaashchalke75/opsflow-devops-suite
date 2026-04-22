@@ -6,7 +6,12 @@
   color-scheme: dark;
 }
 
-html, body, #root { height: 100%; }
+html, body, #root { min-height: 100%; }
+
+/* Desktop: lock to viewport so inner scroll works */
+@media (min-width: 768px) {
+  html, body, #root { height: 100%; }
+}
 
 body {
   font-feature-settings: 'cv11', 'ss01';
@@ -15,6 +20,20 @@ body {
     radial-gradient(60rem 30rem at 20% -10%, rgba(244,63,94,0.08), transparent 60%),
     radial-gradient(40rem 20rem at 100% 0%, rgba(244,63,94,0.05), transparent 60%);
   background-attachment: fixed;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* iOS-smooth momentum scrolling for inner scroll areas on desktop */
+.ios-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent iOS from zooming on input focus */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
 }
 
 ::selection { background: rgba(244,63,94,0.35); color: #fff; }

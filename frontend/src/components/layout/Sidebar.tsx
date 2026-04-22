@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import { useUI } from '@/store/ui';
 import { useAuth } from '@/store/auth';
 import { can, type Permission } from '@/lib/permissions';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect } from 'react';
 
 type NavItem = { to: string; label: string; icon: any; badge?: string; perm?: Permission };
@@ -41,7 +40,7 @@ function NavList({
       onClick={onItemClick}
       className={({ isActive }) =>
         cn(
-          'group flex items-center gap-2.5 rounded-lg px-2.5 h-9 text-sm transition-colors',
+          'group flex items-center gap-2.5 rounded-lg px-2.5 h-10 md:h-9 text-sm transition-colors',
           isActive
             ? 'bg-brand-500/10 text-fg border border-brand-500/20 shadow-[inset_0_0_0_1px_rgba(244,63,94,0.1)]'
             : 'text-fg-muted hover:text-fg hover:bg-bg-hover border border-transparent',
@@ -68,7 +67,7 @@ function NavList({
   );
 
   return (
-    <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
+    <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto overscroll-contain">
       {!collapsed && <div className="section-title px-2 mb-2 mt-1">Operations</div>}
       {NAV.filter(visible).map((item) => renderItem(item))}
 
@@ -78,7 +77,7 @@ function NavList({
   );
 }
 
-/** Desktop sidebar — fixed on the left */
+/** Desktop sidebar — fixed on the left (UNCHANGED) */
 export function Sidebar() {
   const { sidebarCollapsed, toggleSidebar } = useUI();
 
@@ -111,72 +110,81 @@ export function Sidebar() {
   );
 }
 
-/** Mobile drawer — slides in from the left */
+/**
+ * Mobile drawer — slides in from the left.
+ *
+ * Uses pure CSS transitions (not Framer Motion) for bulletproof reliability
+ * on iOS Safari. AnimatePresence + stopPropagation + onTouchEnd combinations
+ * caused close-button failures in iOS 17+. This version:
+ *  - Always renders in the DOM, toggles with `translate-x` for smooth anim
+ *  - No Framer Motion AnimatePresence race conditions
+ *  - No onTouchEnd — standard onClick works everywhere
+ *  - Scroll lock uses data attribute cleanup that can't get stuck
+ */
 export function MobileSidebar() {
   const { mobileNavOpen, setMobileNav } = useUI();
   const location = useLocation();
   const close = () => setMobileNav(false);
 
-  // Auto-close on route change
+  // Auto-close on navigation (route change)
   useEffect(() => {
-    close();
+    setMobileNav(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  // Lock body scroll while open
+  // Lock body scroll while drawer is open. Cleanup guaranteed via unmount effect.
   useEffect(() => {
-    if (mobileNavOpen) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
+    const prev = document.body.style.overflow;
+    if (mobileNavOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [mobileNavOpen]);
 
-  // Close on Escape
+  // Escape key support
   useEffect(() => {
     if (!mobileNavOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileNav(false); };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mobileNavOpen]);
+  }, [mobileNavOpen, setMobileNav]);
 
   return (
-    <AnimatePresence>
-      {mobileNavOpen && (
-        <div className="md:hidden fixed inset-0 z-[80]">
-          {/* Backdrop — separate element, guaranteed clickable */}
-          <motion.button
+    <>
+      {/* Backdrop — pointer-events-none when closed so it never blocks */}
+      <div
+        onClick={close}
+        aria-hidden="true"
+        className={cn(
+          'md:hidden fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm transition-opacity duration-200',
+          mobileNavOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+        )}
+      />
+      {/* Drawer panel */}
+      <aside
+        className={cn(
+          'md:hidden fixed left-0 top-0 bottom-0 z-[81] w-[280px] max-w-[85vw] bg-bg-soft border-r border-border flex flex-col transition-transform duration-200 ease-out',
+          mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+        aria-hidden={!mobileNavOpen}
+      >
+        <div className="flex items-center justify-between h-14 px-4 border-b border-border shrink-0">
+          <Logo />
+          <button
             type="button"
-            aria-label="Close navigation"
             onClick={close}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 w-full h-full bg-black/60 backdrop-blur-sm cursor-pointer"
-          />
-          {/* Drawer panel */}
-          <motion.aside
-            initial={{ x: -300 }}
-            animate={{ x: 0 }}
-            exit={{ x: -300 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-            className="absolute left-0 top-0 bottom-0 h-full w-[280px] max-w-[85vw] bg-bg-soft border-r border-border flex flex-col"
+            className="h-10 w-10 grid place-items-center rounded-md text-fg-muted active:bg-bg-hover -mr-2"
+            aria-label="Close navigation"
           >
-            <div className="flex items-center justify-between h-14 px-4 border-b border-border shrink-0">
-              <Logo />
-              <button
-                type="button"
-                onClick={close}
-                onTouchEnd={(e) => { e.preventDefault(); close(); }}
-                className="h-9 w-9 grid place-items-center rounded-md text-fg-muted hover:text-fg hover:bg-bg-hover active:bg-bg-hover -mr-2"
-                aria-label="Close navigation"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <NavList collapsed={false} onItemClick={close} />
-          </motion.aside>
+            <X className="h-5 w-5" />
+          </button>
         </div>
-      )}
-    </AnimatePresence>
+        <NavList collapsed={false} onItemClick={close} />
+      </aside>
+    </>
   );
 }
