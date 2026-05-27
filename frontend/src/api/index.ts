@@ -1,4 +1,4 @@
-import { http, USE_MOCK } from './client';
+import { http, USE_MOCK as BUILD_USE_MOCK } from './client';
 import { delay, uid } from '@/lib/utils';
 import * as mock from '@/mock/data';
 import type {
@@ -8,21 +8,33 @@ import type {
 
 /**
  * API facade. Every module exposes the same surface whether running against
- * the in-memory mock (demo mode) or the real backend. Flip VITE_USE_MOCK=false
- * in .env and point VITE_API_URL at your server — no call sites need to change.
+ * the in-memory mock (demo mode) or the real backend.
+ *
+ * Mode resolution:
+ *  1. Demo session in localStorage → force mock (recruiter-proof)
+ *  2. Otherwise → use build-time VITE_USE_MOCK flag
+ *
+ * This means demo logins ALWAYS work even if the backend is down, but real
+ * email/password logins still hit the real backend.
  */
+function isMock(): boolean {
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('opsflow_demo') === '1') {
+    return true;
+  }
+  return BUILD_USE_MOCK;
+}
 
 // ------------- AUTH -------------
 export const authApi = {
   async login(email: string, password: string): Promise<AuthPayload> {
-    if (!USE_MOCK) return (await http.post('/auth/login', { email, password })).data;
+    if (!isMock()) return (await http.post('/auth/login', { email, password })).data;
     await delay();
     const user = mock.users.find((u) => u.email.toLowerCase() === email.toLowerCase()) ?? mock.users[0];
     if (password.length < 4) throw new Error('Invalid credentials');
     return { user, token: 'mock.' + uid('tok') };
   },
   async signup(input: { name: string; email: string; password: string }): Promise<AuthPayload> {
-    if (!USE_MOCK) return (await http.post('/auth/signup', input)).data;
+    if (!isMock()) return (await http.post('/auth/signup', input)).data;
     await delay();
     const user: User = {
       id: uid('usr'),
@@ -40,22 +52,24 @@ export const authApi = {
     return { user, token: 'mock.' + uid('tok') };
   },
   async forgot(email: string): Promise<{ ok: true }> {
-    if (!USE_MOCK) return (await http.post('/auth/forgot', { email })).data;
+    if (!isMock()) return (await http.post('/auth/forgot', { email })).data;
     await delay(); return { ok: true };
   },
   async reset(token: string, password: string): Promise<{ ok: true }> {
-    if (!USE_MOCK) return (await http.post('/auth/reset', { token, password })).data;
+    if (!isMock()) return (await http.post('/auth/reset', { token, password })).data;
     await delay(); return { ok: true };
   },
   async me(): Promise<User> {
-    if (!USE_MOCK) return (await http.get('/auth/me')).data;
+    if (!isMock()) return (await http.get('/auth/me')).data;
     await delay(120);
     const cached = localStorage.getItem('opsflow_user');
     if (cached) return JSON.parse(cached);
     return mock.users[0];
   },
   async demo(role: string = 'super_admin'): Promise<AuthPayload & { demo?: boolean }> {
-    if (!USE_MOCK) return (await http.post(`/auth/demo?role=${role}`)).data;
+    // Demo ALWAYS uses in-browser mock — never hits the backend.
+    // This guarantees the public demo works even if the backend is offline,
+    // suspended, or hits free-tier limits.
     await delay();
     const user = mock.users.find((u) => u.role === role) ?? mock.users[0];
     return { user, token: 'demo.' + uid('tok'), demo: true };
@@ -65,7 +79,7 @@ export const authApi = {
 // ------------- DASHBOARD -------------
 export const dashboardApi = {
   async stats(): Promise<DashboardStats> {
-    if (!USE_MOCK) return (await http.get('/dashboard')).data;
+    if (!isMock()) return (await http.get('/dashboard')).data;
     await delay(200); return mock.dashboard;
   },
 };
@@ -73,7 +87,7 @@ export const dashboardApi = {
 // ------------- INCIDENTS -------------
 export const incidentApi = {
   async list(params?: { q?: string; status?: string; priority?: string }): Promise<Incident[]> {
-    if (!USE_MOCK) return (await http.get('/incidents', { params })).data;
+    if (!isMock()) return (await http.get('/incidents', { params })).data;
     await delay();
     let rows = [...mock.incidents];
     if (params?.q) {
@@ -85,14 +99,14 @@ export const incidentApi = {
     return rows.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
   },
   async get(id: string): Promise<Incident> {
-    if (!USE_MOCK) return (await http.get(`/incidents/${id}`)).data;
+    if (!isMock()) return (await http.get(`/incidents/${id}`)).data;
     await delay();
     const row = mock.incidents.find((r) => r.id === id);
     if (!row) throw new Error('Not found');
     return row;
   },
   async create(input: Partial<Incident>): Promise<Incident> {
-    if (!USE_MOCK) return (await http.post('/incidents', input)).data;
+    if (!isMock()) return (await http.post('/incidents', input)).data;
     await delay();
     const owner = mock.users.find((u) => u.id === input.ownerId) ?? mock.users[1];
     const incident: Incident = {
@@ -113,7 +127,7 @@ export const incidentApi = {
     return incident;
   },
   async update(id: string, patch: Partial<Incident>): Promise<Incident> {
-    if (!USE_MOCK) return (await http.patch(`/incidents/${id}`, patch)).data;
+    if (!isMock()) return (await http.patch(`/incidents/${id}`, patch)).data;
     await delay();
     const idx = mock.incidents.findIndex((r) => r.id === id);
     if (idx === -1) throw new Error('Not found');
@@ -122,14 +136,14 @@ export const incidentApi = {
     return mock.incidents[idx];
   },
   async remove(id: string): Promise<{ ok: true }> {
-    if (!USE_MOCK) return (await http.delete(`/incidents/${id}`)).data;
+    if (!isMock()) return (await http.delete(`/incidents/${id}`)).data;
     await delay();
     const idx = mock.incidents.findIndex((r) => r.id === id);
     if (idx >= 0) mock.incidents.splice(idx, 1);
     return { ok: true };
   },
   async comment(id: string, message: string, author: User): Promise<IncidentComment> {
-    if (!USE_MOCK) return (await http.post(`/incidents/${id}/comments`, { message })).data;
+    if (!isMock()) return (await http.post(`/incidents/${id}/comments`, { message })).data;
     await delay();
     const row = mock.incidents.find((r) => r.id === id)!;
     const c: IncidentComment = {
@@ -145,7 +159,7 @@ export const incidentApi = {
 // ------------- DEPLOYMENTS -------------
 export const deploymentApi = {
   async list(params?: { env?: string; status?: string; q?: string }): Promise<Deployment[]> {
-    if (!USE_MOCK) return (await http.get('/deployments', { params })).data;
+    if (!isMock()) return (await http.get('/deployments', { params })).data;
     await delay();
     let rows = [...mock.deployments];
     if (params?.env && params.env !== 'all') rows = rows.filter((r) => r.environment === params.env);
@@ -157,7 +171,7 @@ export const deploymentApi = {
     return rows.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
   },
   async create(input: Partial<Deployment>): Promise<Deployment> {
-    if (!USE_MOCK) return (await http.post('/deployments', input)).data;
+    if (!isMock()) return (await http.post('/deployments', input)).data;
     await delay();
     const d: Deployment = {
       id: uid('dep'),
@@ -177,14 +191,14 @@ export const deploymentApi = {
     return d;
   },
   async updateStatus(id: string, status: Deployment['status']): Promise<Deployment> {
-    if (!USE_MOCK) return (await http.patch(`/deployments/${id}`, { status })).data;
+    if (!isMock()) return (await http.patch(`/deployments/${id}`, { status })).data;
     await delay();
     const d = mock.deployments.find((r) => r.id === id)!;
     d.status = status;
     return d;
   },
   async rollback(id: string): Promise<Deployment> {
-    if (!USE_MOCK) return (await http.post(`/deployments/${id}/rollback`)).data;
+    if (!isMock()) return (await http.post(`/deployments/${id}/rollback`)).data;
     await delay();
     const d = mock.deployments.find((r) => r.id === id)!;
     d.status = 'rolled_back';
@@ -195,7 +209,7 @@ export const deploymentApi = {
 // ------------- ALERTS -------------
 export const alertApi = {
   async list(params?: { severity?: string; status?: string; q?: string }): Promise<Alert[]> {
-    if (!USE_MOCK) return (await http.get('/alerts', { params })).data;
+    if (!isMock()) return (await http.get('/alerts', { params })).data;
     await delay();
     let rows = [...mock.alerts];
     if (params?.severity && params.severity !== 'all') rows = rows.filter((r) => r.severity === params.severity);
@@ -207,7 +221,7 @@ export const alertApi = {
     return rows.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
   },
   async setStatus(id: string, status: Alert['status']): Promise<Alert> {
-    if (!USE_MOCK) return (await http.patch(`/alerts/${id}`, { status })).data;
+    if (!isMock()) return (await http.patch(`/alerts/${id}`, { status })).data;
     await delay();
     const a = mock.alerts.find((r) => r.id === id)!;
     a.status = status;
@@ -218,26 +232,26 @@ export const alertApi = {
 // ------------- TEAMS / USERS / TASKS -------------
 export const teamApi = {
   async listUsers(): Promise<User[]> {
-    if (!USE_MOCK) return (await http.get('/users')).data;
+    if (!isMock()) return (await http.get('/users')).data;
     await delay(); return mock.users;
   },
   async listTeams(): Promise<Team[]> {
-    if (!USE_MOCK) return (await http.get('/teams')).data;
+    if (!isMock()) return (await http.get('/teams')).data;
     await delay(); return mock.teams;
   },
   async updateUser(id: string, patch: Partial<User>): Promise<User> {
-    if (!USE_MOCK) return (await http.patch(`/users/${id}`, patch)).data;
+    if (!isMock()) return (await http.patch(`/users/${id}`, patch)).data;
     await delay();
     const u = mock.users.find((x) => x.id === id)!;
     Object.assign(u, patch);
     return u;
   },
   async listTasks(): Promise<Task[]> {
-    if (!USE_MOCK) return (await http.get('/tasks')).data;
+    if (!isMock()) return (await http.get('/tasks')).data;
     await delay(); return mock.tasks;
   },
   async createTask(input: Partial<Task>): Promise<Task> {
-    if (!USE_MOCK) return (await http.post('/tasks', input)).data;
+    if (!isMock()) return (await http.post('/tasks', input)).data;
     await delay();
     const assignee = mock.users.find((u) => u.id === input.assigneeId) ?? mock.users[1];
     const t: Task = {
@@ -252,7 +266,7 @@ export const teamApi = {
     return t;
   },
   async updateTask(id: string, patch: Partial<Task>): Promise<Task> {
-    if (!USE_MOCK) return (await http.patch(`/tasks/${id}`, patch)).data;
+    if (!isMock()) return (await http.patch(`/tasks/${id}`, patch)).data;
     await delay();
     const t = mock.tasks.find((x) => x.id === id)!;
     Object.assign(t, patch);
@@ -263,7 +277,7 @@ export const teamApi = {
 // ------------- RUNBOOKS -------------
 export const runbookApi = {
   async list(q?: string): Promise<Runbook[]> {
-    if (!USE_MOCK) return (await http.get('/runbooks', { params: { q } })).data;
+    if (!isMock()) return (await http.get('/runbooks', { params: { q } })).data;
     await delay();
     let rows = [...mock.runbooks];
     if (q) {
@@ -273,14 +287,14 @@ export const runbookApi = {
     return rows;
   },
   async get(id: string): Promise<Runbook> {
-    if (!USE_MOCK) return (await http.get(`/runbooks/${id}`)).data;
+    if (!isMock()) return (await http.get(`/runbooks/${id}`)).data;
     await delay();
     const r = mock.runbooks.find((x) => x.id === id);
     if (!r) throw new Error('Not found');
     return r;
   },
   async create(input: Partial<Runbook>): Promise<Runbook> {
-    if (!USE_MOCK) return (await http.post('/runbooks', input)).data;
+    if (!isMock()) return (await http.post('/runbooks', input)).data;
     await delay();
     const r: Runbook = {
       id: uid('rb'),
@@ -294,14 +308,14 @@ export const runbookApi = {
     return r;
   },
   async update(id: string, patch: Partial<Runbook>): Promise<Runbook> {
-    if (!USE_MOCK) return (await http.patch(`/runbooks/${id}`, patch)).data;
+    if (!isMock()) return (await http.patch(`/runbooks/${id}`, patch)).data;
     await delay();
     const r = mock.runbooks.find((x) => x.id === id)!;
     Object.assign(r, patch, { version: r.version + 1, updatedAt: new Date().toISOString() });
     return r;
   },
   async remove(id: string): Promise<{ ok: true }> {
-    if (!USE_MOCK) return (await http.delete(`/runbooks/${id}`)).data;
+    if (!isMock()) return (await http.delete(`/runbooks/${id}`)).data;
     await delay();
     const idx = mock.runbooks.findIndex((x) => x.id === id);
     if (idx >= 0) mock.runbooks.splice(idx, 1);
@@ -312,18 +326,18 @@ export const runbookApi = {
 // ------------- NOTIFICATIONS / AUDIT / ANALYTICS -------------
 export const notificationApi = {
   async list(): Promise<Notification[]> {
-    if (!USE_MOCK) return (await http.get('/notifications')).data;
+    if (!isMock()) return (await http.get('/notifications')).data;
     await delay(); return mock.notifications;
   },
   async markRead(id: string): Promise<Notification> {
-    if (!USE_MOCK) return (await http.patch(`/notifications/${id}/read`)).data;
+    if (!isMock()) return (await http.patch(`/notifications/${id}/read`)).data;
     await delay();
     const n = mock.notifications.find((x) => x.id === id)!;
     n.read = true;
     return n;
   },
   async markAllRead(): Promise<{ ok: true }> {
-    if (!USE_MOCK) return (await http.post('/notifications/read-all')).data;
+    if (!isMock()) return (await http.post('/notifications/read-all')).data;
     await delay();
     mock.notifications.forEach((n) => (n.read = true));
     return { ok: true };
@@ -332,14 +346,14 @@ export const notificationApi = {
 
 export const auditApi = {
   async list(): Promise<AuditLog[]> {
-    if (!USE_MOCK) return (await http.get('/audit-logs')).data;
+    if (!isMock()) return (await http.get('/audit-logs')).data;
     await delay(); return mock.auditLogs;
   },
 };
 
 export const analyticsApi = {
   async overview(): Promise<AnalyticsPayload> {
-    if (!USE_MOCK) return (await http.get('/analytics')).data;
+    if (!isMock()) return (await http.get('/analytics')).data;
     await delay(); return mock.analytics;
   },
 };
