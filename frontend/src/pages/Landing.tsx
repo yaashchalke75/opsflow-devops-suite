@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import {
   AlertOctagon, Rocket, Bell, Users, BookOpen, BarChart3,
   ShieldCheck, Zap, Activity, Clock, GitCommit, Server,
   ArrowRight, Sparkles, Github, Check, Terminal,
-  Lock, Database, Code2, Globe, Cpu,
+  Lock, Database, Code2, Globe, Cpu, Layers,
 } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { Button } from '@/components/ui/Button';
@@ -13,17 +13,31 @@ import { useRef } from 'react';
 export default function Landing() {
   return (
     <div className="min-h-screen bg-bg text-fg overflow-x-hidden">
+      <ScrollProgressBar />
       <LandingNav />
       <Hero />
       <Marquee />
       <Features />
       <ScrollTextReveal />
+      <ArchitectureDiagram />
       <Workflow />
       <Stats />
       <TechStack />
       <CTA />
       <Footer />
     </div>
+  );
+}
+
+/* ─────────────────────────── SCROLL PROGRESS BAR ─────────────────────────── */
+function ScrollProgressBar() {
+  const { scrollYProgress } = useScroll();
+  const width = useSpring(scrollYProgress, { stiffness: 120, damping: 25 });
+  return (
+    <motion.div
+      style={{ scaleX: width, transformOrigin: '0%' }}
+      className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-brand-400 via-brand-500 to-brand-700 z-[100]"
+    />
   );
 }
 
@@ -152,7 +166,34 @@ function Hero() {
       >
         <DashboardPreview />
       </motion.div>
+
+      {/* Scroll cue at the very bottom of the hero */}
+      <ScrollHint />
     </section>
+  );
+}
+
+function ScrollHint() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 1.2, duration: 0.6 }}
+      className="hidden md:flex flex-col items-center gap-2 mt-16 text-fg-subtle"
+    >
+      <span className="text-[10px] uppercase tracking-[0.3em]">Scroll to explore</span>
+      <motion.div
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        className="relative w-6 h-10 rounded-full border-2 border-border-strong flex items-start justify-center pt-2"
+      >
+        <motion.span
+          animate={{ y: [0, 12, 0], opacity: [1, 0.2, 1] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          className="block w-1 h-1.5 bg-brand-400 rounded-full"
+        />
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -347,6 +388,207 @@ function ScrollWord({
     >
       {word}
     </motion.span>
+  );
+}
+
+/* ─────────────────────────── ARCHITECTURE DIAGRAM ─────────────────────────── */
+/**
+ * Animated 3-tier architecture diagram that draws itself as the user scrolls.
+ * Nodes pop in one-by-one. Connecting lines draw in. Data flows along the
+ * connections after they're complete. This is the showpiece animation.
+ */
+function ArchitectureDiagram() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start 0.85', 'end 0.6'],
+  });
+
+  // Node reveal stages
+  const browserOpacity = useTransform(scrollYProgress, [0, 0.15], [0, 1]);
+  const browserY = useTransform(scrollYProgress, [0, 0.15], [20, 0]);
+
+  const cdnOpacity = useTransform(scrollYProgress, [0.1, 0.25], [0, 1]);
+  const cdnY = useTransform(scrollYProgress, [0.1, 0.25], [20, 0]);
+
+  const apiOpacity = useTransform(scrollYProgress, [0.25, 0.4], [0, 1]);
+  const apiY = useTransform(scrollYProgress, [0.25, 0.4], [20, 0]);
+
+  const dbOpacity = useTransform(scrollYProgress, [0.4, 0.55], [0, 1]);
+  const dbY = useTransform(scrollYProgress, [0.4, 0.55], [20, 0]);
+
+  // Line draw stages
+  const line1Length = useTransform(scrollYProgress, [0.15, 0.3], [0, 1]);
+  const line2Length = useTransform(scrollYProgress, [0.3, 0.45], [0, 1]);
+  const line3Length = useTransform(scrollYProgress, [0.45, 0.6], [0, 1]);
+
+  // Data packet positions (move along the lines after they're drawn)
+  const packet1X = useTransform(scrollYProgress, [0.6, 0.8], ['0%', '100%']);
+  const packet2X = useTransform(scrollYProgress, [0.6, 0.8], ['0%', '100%']);
+  const packet3X = useTransform(scrollYProgress, [0.6, 0.8], ['0%', '100%']);
+
+  return (
+    <section ref={ref} className="py-24 md:py-40 relative overflow-hidden">
+      {/* Ambient glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-brand-500/8 blur-[150px] rounded-full pointer-events-none" />
+
+      <div className="max-w-6xl mx-auto px-4 md:px-6 relative">
+        <SectionHeader
+          eyebrow="The architecture"
+          title="Built like a real product"
+          subtitle="Frontend on Vercel's edge network. Backend on Render. MongoDB Atlas for data. All connected with proper auth, CORS, and CI/CD."
+        />
+
+        {/* The diagram */}
+        <div className="mt-16 md:mt-24 max-w-4xl mx-auto">
+          <div className="relative grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-4 items-center">
+            {/* Browser */}
+            <DiagramNode
+              motionStyle={{ opacity: browserOpacity, y: browserY }}
+              icon={Globe}
+              label="Browser"
+              sublabel="Recruiter"
+              color="from-state-info to-brand-400"
+            />
+
+            <DiagramConnector
+              motionStyle={{ scaleX: line1Length }}
+              packetX={packet1X}
+              label="HTTPS"
+            />
+
+            {/* Vercel CDN */}
+            <DiagramNode
+              motionStyle={{ opacity: cdnOpacity, y: cdnY }}
+              icon={Cpu}
+              label="Vercel CDN"
+              sublabel="React SPA"
+              color="from-brand-400 to-brand-500"
+              accent
+            />
+
+            <DiagramConnector
+              motionStyle={{ scaleX: line2Length }}
+              packetX={packet2X}
+              label="JWT"
+            />
+
+            {/* These two need to wrap to a new row on desktop using col-span */}
+            <div className="md:col-span-2" />
+
+            {/* Server */}
+            <DiagramNode
+              motionStyle={{ opacity: apiOpacity, y: apiY }}
+              icon={Server}
+              label="Render API"
+              sublabel="Node + Express"
+              color="from-brand-500 to-brand-600"
+              accent
+            />
+
+            <DiagramConnector
+              motionStyle={{ scaleX: line3Length }}
+              packetX={packet3X}
+              label="Mongoose"
+            />
+
+            {/* DB */}
+            <DiagramNode
+              motionStyle={{ opacity: dbOpacity, y: dbY }}
+              icon={Database}
+              label="MongoDB Atlas"
+              sublabel="11 collections"
+              color="from-brand-600 to-brand-700"
+            />
+
+            <div className="md:col-span-2" />
+          </div>
+
+          {/* Below the diagram: a strip of badges showing what travels */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="mt-12 flex flex-wrap justify-center gap-2"
+          >
+            {[
+              { label: 'CORS-locked', icon: ShieldCheck },
+              { label: 'JWT auth', icon: Lock },
+              { label: 'Zod-validated', icon: Check },
+              { label: 'Rate-limited', icon: Activity },
+              { label: 'Audit-logged', icon: Layers },
+            ].map((b) => (
+              <span key={b.label} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs bg-bg-card border border-border text-fg-muted">
+                <b.icon className="h-3 w-3 text-brand-400" />
+                {b.label}
+              </span>
+            ))}
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DiagramNode({
+  motionStyle, icon: Icon, label, sublabel, color, accent = false,
+}: {
+  motionStyle: any;
+  icon: any;
+  label: string;
+  sublabel: string;
+  color: string;
+  accent?: boolean;
+}) {
+  return (
+    <motion.div style={motionStyle} className="relative">
+      <div className={`relative card p-4 md:p-5 text-center group hover:border-border-strong transition-colors ${accent ? 'shadow-[0_0_40px_-12px_rgba(244,63,94,0.4)]' : ''}`}>
+        <div className={`mx-auto h-12 w-12 md:h-14 md:w-14 rounded-xl bg-gradient-to-br ${color} grid place-items-center text-white shadow-lg mb-3`}>
+          <Icon className="h-6 w-6 md:h-7 md:w-7" />
+        </div>
+        <div className="text-sm font-semibold">{label}</div>
+        <div className="text-[10px] md:text-xs text-fg-muted mt-0.5">{sublabel}</div>
+        {/* Pulsing dot to indicate "live" */}
+        <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-state-success animate-pulse-dot" />
+      </div>
+    </motion.div>
+  );
+}
+
+function DiagramConnector({
+  motionStyle, packetX, label,
+}: {
+  motionStyle: any;
+  packetX: any;
+  label: string;
+}) {
+  return (
+    <div className="relative h-12 md:h-1 flex items-center justify-center md:justify-stretch">
+      {/* Mobile: vertical down arrow */}
+      <div className="md:hidden flex flex-col items-center gap-1">
+        <motion.div
+          style={{ scaleY: motionStyle.scaleX }}
+          className="w-px h-8 bg-gradient-to-b from-brand-500/0 via-brand-500 to-brand-500/0 origin-top"
+        />
+        <span className="text-[10px] font-mono text-fg-subtle">{label}</span>
+      </div>
+
+      {/* Desktop: horizontal line with animated packet */}
+      <div className="hidden md:block relative w-full">
+        <motion.div
+          style={{ scaleX: motionStyle.scaleX }}
+          className="h-px bg-gradient-to-r from-brand-500/40 via-brand-500 to-brand-500/40 origin-left"
+        />
+        <motion.div
+          style={{ left: packetX }}
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-2 w-2 rounded-full bg-brand-400 shadow-[0_0_10px_2px_rgba(244,63,94,0.6)]"
+        />
+        <div className="absolute left-1/2 -translate-x-1/2 -bottom-5 text-[9px] font-mono text-fg-subtle uppercase tracking-widest">
+          {label}
+        </div>
+      </div>
+    </div>
   );
 }
 
