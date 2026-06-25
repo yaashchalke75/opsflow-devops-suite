@@ -305,54 +305,62 @@ function Features() {
 /* ─────────────────────────── WORKFLOW ─────────────────────────── */
 function Workflow() {
   const steps = [
-    { icon: Bell, title: 'Alert fires', desc: 'Datadog detects a 5xx spike on the payments service. It pushes to OpsFlow.' },
-    { icon: AlertOctagon, title: 'Incident opens', desc: 'On-call DevOps acknowledges, opens INC-1054, sets priority to critical.' },
-    { icon: Users, title: 'Team coordinates', desc: 'Developer comments findings. Manager handles customer comms. Timeline tracked.' },
-    { icon: BookOpen, title: 'Runbook executed', desc: 'Stripe-timeout runbook pulled up. Steps followed. Hotfix prepared.' },
-    { icon: Rocket, title: 'Deploy + rollback ready', desc: 'v1.8.5-hotfix pushed to production. Status: success. Rollback one click away.' },
-    { icon: BarChart3, title: 'Metrics update', desc: 'MTTR drops, deployment success rate refreshes, audit trail records every action.' },
+    { icon: Bell, time: '00:00', title: 'Alert fires', desc: 'Datadog detects a 5xx spike on the payments service. It pushes to OpsFlow.', tone: 'from-state-warning/30 to-state-warning/5', iconTone: 'text-state-warning' },
+    { icon: AlertOctagon, time: '00:42', title: 'Incident opens', desc: 'On-call DevOps acknowledges, opens INC-1054, sets priority to critical.', tone: 'from-state-danger/30 to-state-danger/5', iconTone: 'text-state-danger' },
+    { icon: Users, time: '02:15', title: 'Team coordinates', desc: 'Developer comments findings. Manager handles customer comms. Timeline tracked.', tone: 'from-state-info/30 to-state-info/5', iconTone: 'text-state-info' },
+    { icon: BookOpen, time: '05:30', title: 'Runbook executed', desc: 'Stripe-timeout runbook pulled up. Steps followed. Hotfix prepared.', tone: 'from-brand-500/30 to-brand-500/5', iconTone: 'text-brand-400' },
+    { icon: Rocket, time: '12:08', title: 'Deploy + rollback ready', desc: 'v1.8.5-hotfix pushed to production. Status: success. Rollback one click away.', tone: 'from-brand-400/30 to-brand-400/5', iconTone: 'text-brand-400' },
+    { icon: BarChart3, time: '15:42', title: 'Metrics update', desc: 'MTTR drops, deployment success rate refreshes, audit trail records every action.', tone: 'from-state-success/30 to-state-success/5', iconTone: 'text-state-success' },
   ];
 
   return (
-    <section id="workflow" className="relative py-20 md:py-32 bg-bg-soft/30 border-y border-border/50">
-      <div className="max-w-6xl mx-auto px-4 md:px-6">
+    <section id="workflow" className="relative py-20 md:py-32 bg-bg-soft/30 border-y border-border/50 overflow-hidden">
+      {/* Ambient background blobs */}
+      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[500px] h-[500px] bg-brand-500/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[400px] h-[400px] bg-brand-700/5 blur-[100px] rounded-full pointer-events-none" />
+
+      <div className="max-w-6xl mx-auto px-4 md:px-6 relative">
         <SectionHeader
           eyebrow="How it works"
           title="From alert to resolution, end to end."
           subtitle="A real production incident, handled the OpsFlow way. Every step recorded, every owner accountable."
         />
 
-        <div className="mt-12 md:mt-16 relative">
-          {/* Vertical line on mobile, horizontal connector on desktop */}
-          <div className="hidden md:block absolute top-12 left-[8%] right-[8%] h-px bg-gradient-to-r from-transparent via-brand-500/40 to-transparent" />
+        <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {steps.map((s, i) => (
+            <motion.div
+              key={s.title}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ delay: i * 0.08, duration: 0.5 }}
+              whileHover={{ y: -4 }}
+              className="group relative card p-5 md:p-6 hover:border-border-strong transition-colors overflow-hidden"
+            >
+              {/* Hover gradient glow */}
+              <div className={`absolute -top-20 -right-20 h-48 w-48 rounded-full bg-gradient-to-br ${s.tone} opacity-0 group-hover:opacity-100 blur-3xl transition-opacity duration-500 pointer-events-none`} />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-            {steps.map((s, i) => (
-              <motion.div
-                key={s.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                className="relative"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="relative shrink-0">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-brand-500/20 to-brand-700/20 border border-brand-500/40 grid place-items-center text-brand-400 backdrop-blur-sm">
-                      <s.icon className="h-5 w-5" />
-                    </div>
-                    <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-bg-card border border-border grid place-items-center text-[10px] font-mono font-semibold text-fg-muted">
-                      {i + 1}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold mb-1">{s.title}</h3>
-                    <p className="text-xs text-fg-muted leading-relaxed">{s.desc}</p>
-                  </div>
+              {/* Top row: icon + timecode */}
+              <div className="relative flex items-center justify-between mb-4">
+                <div className={`h-11 w-11 rounded-xl bg-bg-elev border border-border grid place-items-center ${s.iconTone} group-hover:scale-110 transition-transform duration-300`}>
+                  <s.icon className="h-5 w-5" />
                 </div>
-              </motion.div>
-            ))}
-          </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-fg-subtle">
+                  <span className="h-1 w-1 rounded-full bg-fg-subtle" />
+                  <span>T+{s.time}</span>
+                </div>
+              </div>
+
+              {/* Content */}
+              <h3 className="relative text-base font-semibold mb-2 group-hover:text-fg transition-colors">{s.title}</h3>
+              <p className="relative text-sm text-fg-muted leading-relaxed">{s.desc}</p>
+
+              {/* Bottom accent line that animates on hover */}
+              <div className="relative mt-4 h-px bg-border overflow-hidden">
+                <div className={`absolute inset-y-0 left-0 w-0 group-hover:w-full bg-gradient-to-r ${s.tone.replace('/30', '/80').replace('/5', '/20')} transition-all duration-500`} />
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
     </section>
