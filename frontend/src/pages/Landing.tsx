@@ -17,6 +17,7 @@ export default function Landing() {
       <Hero />
       <Marquee />
       <Features />
+      <ScrollTextReveal />
       <Workflow />
       <Stats />
       <TechStack />
@@ -235,26 +236,117 @@ function DashboardPreview() {
 
 /* ─────────────────────────── MARQUEE ─────────────────────────── */
 function Marquee() {
-  const items = [
-    'React 18', 'TypeScript', 'Node.js', 'Express', 'MongoDB Atlas',
-    'Tailwind CSS', 'Vercel', 'Render', 'JWT', 'Recharts', 'Framer Motion',
-    'Mongoose', 'TanStack Query', 'Zustand', 'Vite',
+  // Each row scrolls in opposite direction for a more dynamic feel
+  const row1 = [
+    'React 18', 'TypeScript', 'Vite', 'Tailwind CSS', 'TanStack Query',
+    'Zustand', 'React Router', 'Recharts', 'Framer Motion', 'Lucide Icons',
   ];
+  const row2 = [
+    'Node.js', 'Express', 'Mongoose', 'MongoDB Atlas', 'JWT',
+    'bcrypt', 'Zod', 'Helmet', 'CORS', 'Rate Limiting',
+  ];
+  const row3 = [
+    'Vercel', 'Render', 'GitHub Actions', 'UptimeRobot', 'CI/CD',
+    'Auto-deploy', 'Zero-downtime', 'Atlas Cloud', 'Production', 'Live',
+  ];
+
   return (
-    <section className="py-12 border-y border-border/50 overflow-hidden">
-      <p className="text-center text-xs uppercase tracking-widest text-fg-subtle mb-6">
-        Built with modern, production-ready technology
-      </p>
-      <div className="relative">
-        <div className="flex gap-12 animate-marquee">
-          {[...items, ...items].map((tech, i) => (
-            <span key={i} className="text-sm font-medium text-fg-muted whitespace-nowrap">
-              {tech}
-            </span>
-          ))}
-        </div>
+    <section className="py-14 md:py-20 border-y border-border/50 overflow-hidden relative">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="text-center mb-10"
+      >
+        <p className="text-xs uppercase tracking-widest text-fg-subtle">
+          Built with modern, production-ready technology
+        </p>
+      </motion.div>
+
+      <div className="space-y-4 md:space-y-6 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+        <MarqueeRow items={row1} direction="left" speed={45} tone="text-fg-muted" />
+        <MarqueeRow items={row2} direction="right" speed={55} tone="text-brand-400" />
+        <MarqueeRow items={row3} direction="left" speed={40} tone="text-fg-muted" />
       </div>
     </section>
+  );
+}
+
+function MarqueeRow({
+  items, direction, speed, tone,
+}: { items: string[]; direction: 'left' | 'right'; speed: number; tone: string }) {
+  // Double the items so the loop is seamless
+  const tripled = [...items, ...items, ...items];
+  return (
+    <div className="relative overflow-hidden">
+      <motion.div
+        animate={{ x: direction === 'left' ? ['0%', '-33.33%'] : ['-33.33%', '0%'] }}
+        transition={{ duration: speed, ease: 'linear', repeat: Infinity }}
+        className="flex gap-3 md:gap-4 whitespace-nowrap"
+      >
+        {tripled.map((tech, i) => (
+          <span
+            key={i}
+            className={`shrink-0 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-border bg-bg-card/50 text-xs md:text-sm font-medium ${tone} backdrop-blur-sm`}
+          >
+            {tech}
+          </span>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
+/* ─────────────────────────── SCROLL TEXT REVEAL ─────────────────────────── */
+function ScrollTextReveal() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start 0.8', 'end 0.3'],
+  });
+
+  const text = 'OpsFlow connects every layer of your DevOps loop — alerts surface, incidents open, teams coordinate, runbooks execute, deploys ship, metrics update.';
+  const words = text.split(' ');
+
+  return (
+    <section ref={ref} className="py-24 md:py-40 relative">
+      <div className="max-w-5xl mx-auto px-4 md:px-6">
+        <p className="text-2xl md:text-4xl lg:text-5xl font-bold leading-[1.3] tracking-tight text-center">
+          {words.map((word, i) => {
+            const start = i / words.length;
+            const end = start + 1 / words.length;
+            return (
+              <ScrollWord
+                key={i}
+                progress={scrollYProgress}
+                range={[start, end]}
+                word={word}
+              />
+            );
+          })}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function ScrollWord({
+  progress, range, word,
+}: {
+  progress: ReturnType<typeof useScroll>['scrollYProgress'];
+  range: [number, number];
+  word: string;
+}) {
+  const opacity = useTransform(progress, range, [0.15, 1]);
+  // Highlight CI/CD-related words in brand color
+  const isHighlight = /^(alerts|incidents|teams|runbooks|deploys|metrics)/i.test(word);
+  return (
+    <motion.span
+      style={{ opacity }}
+      className={`inline-block mr-2 md:mr-3 ${isHighlight ? 'text-brand-400' : 'text-fg'}`}
+    >
+      {word}
+    </motion.span>
   );
 }
 
@@ -390,14 +482,15 @@ function Stats() {
           {stats.map((s, i) => (
             <motion.div
               key={s.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
-              className="card p-4 md:p-5 text-center"
+              initial={{ opacity: 0, scale: 0.85, y: 20 }}
+              whileInView={{ opacity: 1, scale: 1, y: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ delay: i * 0.06, type: 'spring', stiffness: 180, damping: 18 }}
+              whileHover={{ y: -4, scale: 1.03 }}
+              className="card p-4 md:p-5 text-center group cursor-default"
             >
-              <s.icon className="h-4 w-4 text-brand-400 mx-auto mb-2" />
-              <div className="text-xl md:text-2xl font-bold tracking-tight">{s.value}</div>
+              <s.icon className="h-4 w-4 text-brand-400 mx-auto mb-2 group-hover:scale-125 transition-transform duration-300" />
+              <div className="text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-br from-fg to-fg-muted bg-clip-text text-transparent group-hover:from-brand-300 group-hover:to-brand-500 transition-colors">{s.value}</div>
               <div className="text-[10px] md:text-xs uppercase tracking-wider text-fg-subtle mt-1">{s.label}</div>
             </motion.div>
           ))}
