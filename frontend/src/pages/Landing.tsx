@@ -383,7 +383,7 @@ function Stats() {
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <SectionHeader
           eyebrow="By the numbers"
-          title="Production, not prototype."
+          title="Production Not Prototype"
           subtitle="Real schema, real auth, real CI/CD. Hosted on Vercel + Render + MongoDB Atlas with custom CORS, JWT, rate limiting."
         />
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mt-10 md:mt-12">
