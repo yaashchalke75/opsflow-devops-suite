@@ -6,6 +6,7 @@ import { AuthLayout } from '@/layouts/AuthLayout';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { can, type Permission } from '@/lib/permissions';
 
+const Landing = lazy(() => import('@/pages/Landing'));
 const Login = lazy(() => import('@/pages/auth/Login'));
 const Signup = lazy(() => import('@/pages/auth/Signup'));
 const Forgot = lazy(() => import('@/pages/auth/Forgot'));
@@ -53,7 +54,9 @@ export default function App() {
   return (
     <Suspense fallback={<Fallback />}>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {/* Public landing page — always reachable, no redirect for logged-in users
+            so the "Sign in / Try demo" CTA still works as a way to jump into the app. */}
+        <Route path="/" element={<Landing />} />
 
         <Route element={<Public><AuthLayout /></Public>}>
           <Route path="/login" element={<Login />} />

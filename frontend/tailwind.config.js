@@ -55,10 +55,14 @@ export default {
       keyframes: {
         'fade-in': { '0%': { opacity: '0', transform: 'translateY(4px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
         'pulse-dot': { '0%,100%': { opacity: '1' }, '50%': { opacity: '0.4' } },
+        'marquee': { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } },
+        'float-y': { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-8px)' } },
       },
       animation: {
         'fade-in': 'fade-in 0.25s ease-out',
         'pulse-dot': 'pulse-dot 1.5s ease-in-out infinite',
+        'marquee': 'marquee 30s linear infinite',
+        'float-y': 'float-y 4s ease-in-out infinite',
       },
     },
   },
